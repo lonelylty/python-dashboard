@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script type="text/javascript" src="/static/echarts/echarts.js"></script>
+</head>
+<body>
+    
+
+    <div id="cont1">
+        <div id="rpthost" style="height:400px;width:auto;"></div>
+        <div id="rptChannel" style="height:400px;width:auto;"></div>
+        <div id="wsconent"><div> 
+    </div>
+
+    <script type="text/javascript">
+        require.config({
+            paths: {
+                echarts: '/static/echarts'
+            }
+        });
+
+        require(
+            [
+                'echarts',
+                'echarts/chart/bar', 
+                'echarts/chart/line',
+                'echarts/chart/pie'
+            ],
+            function (ec) 
+            {
+                
+                var myChart = ec.init(document.getElementById('rpthost'));
+                var myChartVisitor = ec.init(document.getElementById('rptChannel'));
+   
+                var option = {
+                    tooltip: {
+                        show: true
+                    },
+                    legend: {
+                        data: ['Host']
+                    },
+                    xAxis: [
+                        {
+                            type: 'category',
+                            data: {{!xhost}}  
+                            }
+                    ],
+                    yAxis: [
+                        {
+                            type: 'value'
+                        }
+                    ],
+                    series: [
+                        {
+                            "name": "macaddr_client count",
+                            "type": "bar",
+                            "data": {{yhostCnt}}
+                            }
+                    ]
+                };
+
+                var option1 = {
+                    tooltip: {
+                        show: true
+                    },
+                    legend: {
+                        data: ['Channel']
+                    },
+                    xAxis: [
+                        {
+                            type: 'category',
+                            data: {{!xChannel }}
+                            }
+                    ],
+                    yAxis: [
+                        {
+                            type: 'value'
+                        }
+                    ],
+                    series: [
+                        {
+                            "name": "macaddr_client count",
+                            "type": "bar",
+                            "data": {{ychannCnt}}
+                            }
+                    ]
+                };
+
+                myChart.setOption(option);
+                myChartVisitor.setOption(option1);
+                
+            }
+        );
+    </script>
+</body>
+</html>
