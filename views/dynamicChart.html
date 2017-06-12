@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<script type="text/javascript">
+
+		window.onload = function () {
+
+			if ("WebSocket" in window)
+			{
+
+				// initial values of dataPoints
+				var dps = [
+					{label: "hostName:cNa-8bfa", y: 10}	,
+					{label: "channel1", y: 0},
+					{label: "channel2", y: 0},
+					{label: "channel3", y: 0},
+					{label: "channel4", y: 0},
+					{label: "channel5", y: 3},
+					{label: "channel6", y: 0},
+					{label: "channel7", y: 0},
+					{label: "channel8", y: 5},
+					{label: "channel9", y: 0},
+					{label: "channel10", y: 0},
+					{label: "channel11", y: 0}
+				];
+				var totalEmployees = "total unique mac_address: 0";
+
+				var chart = new CanvasJS.Chart("chartContainer",{
+					theme: "theme1",
+					title:{ 
+						text: "unique mac_address Dashboard"
+					},
+					axisY: {				
+						title: "Number of unique mac_address"
+					},					
+					legend:{
+						verticalAlign: "top",
+						horizontalAlign: "centre",
+						fontSize: 18
+
+					},
+					data : [{
+						type: "column",
+						showInLegend: true,
+						legendMarkerType: "none",				
+						legendText: totalEmployees,
+						indexLabel: "{y}",
+						dataPoints: dps
+					}]
+				});
+
+				chart.render();
+
+				var sum = 0;
+				var dicHost=new Dictionary();
+				var dicChannel=new Dictionary();
+				var dicHostReuslt=new Dictionary();
+				var dicChannelReuslt=new Dictionary();
+				var dicClient=new Dictionary();
+
+				var server="ws://cnadashboard.sq2.cards/ws";
+			    var ws = new WebSocket(server);
+
+			    ws.onopen = function(){};
+			    ws.onmessage = function (evt) 
+			    { 
+			    	var received_msg = evt.data;
+			    	var content=document.getElementById("receiveContent");
+			    	content.innerHTML+="<label>"+received_msg+"</label><br/>";
+			    	generateReport(received_msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,sum);
+			    };
+			}
+			else
+			{
+			   alert("WebSocket NOT supported by your Browser!");
+			}	
+		}
+
+		function generateReport(msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,sum){
+			
+			var receivejson = JSON.parse(msg);
+			var hostkey=receivejson.hostname+receivejson.macaddr_client;
+			var channelkey=receivejson.channel+receivejson.macaddr_client;
+			var clientkey=receivejson.macaddr_client;
+			
+			if (!dicHost.has(hostkey))
+				dicHost.set(hostkey,receivejson.hostname);
+
+			if (!dicChannel.has(channelkey)) 
+				dicChannel.set(channelkey,receivejson.channel);
+
+			if (!dicClient.has(clientkey)){
+			    dicClient.set(clientkey,1);
+			    sum=sum+1;
+			}
+
+			for(var key in dicHost.getItems())
+			{
+				var value=dicHost.get(key);
+				if (dicHostReuslt.has(value))
+					dicHostReuslt.set(value,dicHostReuslt.get(value)+1);
+				else
+					dicHostReuslt.set(value,1);
+			}
+
+			for(var key in dicChannel.getItems())
+			{
+				var value=dicChannel.get(key);
+				if (dicChannelReuslt.has(value))
+					dicChannelReuslt.set(value,dicChannelReuslt.get(value)+1);
+				else
+					dicChannelReuslt.set(value,1);
+			}
+
+			for(var key in dicHostReuslt.getItems())
+			{
+				var dataPointIndex=0;
+				dps[dataPointIndex].y =dicHostReuslt.get(key);
+			}
+
+			for(var key in dicChannelReuslt.getItems())
+			{
+				var dataPointIndex=key;
+				var deltaY=dicChannelReuslt.get(key);
+				dps[dataPointIndex].y =deltaY;
+			}
+			
+			// updating legend text. 
+			//sum = sum + deltaY;
+			totalEmployees = "total unique mac_address: " + sum;			
+			chart.options.data[0].legendText = totalEmployees;	
+
+			chart.render();
+		}
+
+		function Dictionary() {
+            var items = {};
+
+            this.has = function (key) {
+                return key in items;
+            };
+
+            this.set = function (key, value) {
+                items[key] = value;
+            };
+
+            this.remove = function (key) {
+                if (this.has(key)) {
+                    delete items[key];
+                    return true;
+                }
+                return false;
+            };
+
+            this.get = function (key) {
+                return this.has(key) ? items[key] : undefined;
+            };
+
+            this.values = function () {
+                var values = [];
+                for (var k in items) {
+                    if (this.has(k)) {
+                        values.push(items[k]);
+                    }
+                }
+                return values;
+            };
+
+            this.clear = function () {
+                items = {};
+            };
+
+            this.size = function () {
+                var count = 0;
+                for (var prop in items) {
+                    if (items.hasOwnProperty(prop)) {
+                        ++count;
+                    }
+                }
+                return count;
+            };
+
+            this.getItems = function () {
+                return items;
+            };
+        }
+	</script>
+
+	<script type="text/javascript" src="canvasjs.min.js"></script>
+</head>
+<body>
+	<div id="chartContainer" style="height:300px; width:100%;"></div>
+	<div id="receiveContent" style="height:300px; width:100%;"><div>
+</body>
+
+</html>
