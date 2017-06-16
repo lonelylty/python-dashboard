@@ -3,33 +3,24 @@
 
 <head>
 	<script type="text/javascript">
+		var sum = 0;
+		var mac_address=document.getElementById("mac_address");
+		var content=document.getElementById("receiveContent");
 
 		window.onload = function () {
 
-			if ("WebSocket" in window)
-			{
-
-				// initial values of dataPoints
-				var dps = [
-					{label: "hostName:cNa-8bfa", y: 10}	,
-					{label: "channel1", y: 0},
-					{label: "channel2", y: 0},
-					{label: "channel3", y: 0},
-					{label: "channel4", y: 0},
-					{label: "channel5", y: 3},
-					{label: "channel6", y: 0},
-					{label: "channel7", y: 0},
-					{label: "channel8", y: 5},
-					{label: "channel9", y: 0},
-					{label: "channel10", y: 0},
-					{label: "channel11", y: 0}
-				];
+			if ("WebSocket" in window){
 				var totalEmployees = "total unique mac_address: 0";
 
-				var chart = new CanvasJS.Chart("chartContainer",{
+				// initial values of dataPoints
+				var dpsHost = [
+					
+					{label: "hostName:cNa-8bfa", y: 0}
+				];
+				var chartHost = new CanvasJS.Chart("chartHost",{
 					theme: "theme1",
 					title:{ 
-						text: "unique mac_address Dashboard"
+						text: "unique macaddr_client by hostname"
 					},
 					axisY: {				
 						title: "Number of unique mac_address"
@@ -46,13 +37,53 @@
 						legendMarkerType: "none",				
 						legendText: totalEmployees,
 						indexLabel: "{y}",
-						dataPoints: dps
+						dataPoints: dpsHost
 					}]
 				});
 
-				chart.render();
+				var dpsChannel = [
+					{label: "channel0", y: 0},
+					{label: "channel1", y: 0},
+					{label: "channel2", y: 0},
+					{label: "channel3", y: 0},
+					{label: "channel4", y: 0},
+					{label: "channel5", y: 0},
+					{label: "channel6", y: 0},
+					{label: "channel7", y: 0},
+					{label: "channel8", y: 0},
+					{label: "channel9", y: 0},
+					{label: "channel10", y: 0},
+					{label: "channel11", y: 0},
+					{label: "channel12", y: 0},
+					{label: "channel13", y: 0},
+				];
+				var chartChannel = new CanvasJS.Chart("chartChannel",{
+					theme: "theme2",
+					title:{ 
+						text: "unique macaddr_client by channel"
+					},
+					axisY: {				
+						title: "Number of unique mac_address"
+					},					
+					legend:{
+						verticalAlign: "top",
+						horizontalAlign: "centre",
+						fontSize: 18
 
-				var sum = 0;
+					},
+					data : [{
+						type: "column",
+						showInLegend: true,
+						legendMarkerType: "none",				
+						legendText: totalEmployees,
+						indexLabel: "{y}",
+						dataPoints: dpsChannel
+					}]
+				});
+
+				chartHost.render();
+				chartChannel.render();
+
 				var dicHost=new Dictionary();
 				var dicChannel=new Dictionary();
 				var dicHostReuslt=new Dictionary();
@@ -66,72 +97,70 @@
 			    ws.onmessage = function (evt) 
 			    { 
 			    	var received_msg = evt.data;
-			    	var content=document.getElementById("receiveContent");
-			    	content.innerHTML+="<label>"+received_msg+"</label><br/>";
-			    	generateReport(received_msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,sum);
+			    	content.innerHTML="<label>"+received_msg+"</label><br/>"+content.innerHTML;
+			    	generateReport(received_msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,dpsHost,dpsChannel,chartHost,chartChannel);
 			    };
 			}
-			else
-			{
+			else{
 			   alert("WebSocket NOT supported by your Browser!");
 			}	
 		}
 
-		function generateReport(msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,sum){
+		function generateReport(msg,dicHost,dicChannel,dicHostReuslt,dicChannelReuslt,dicClient,dpsHost,dpsChannel,chartHost,chartChannel){
 			
 			var receivejson = JSON.parse(msg);
 			var hostkey=receivejson.hostname+receivejson.macaddr_client;
 			var channelkey=receivejson.channel+receivejson.macaddr_client;
 			var clientkey=receivejson.macaddr_client;
+			var noSameHost=noSameChannel=true;
 			
-			if (!dicHost.has(hostkey))
-				dicHost.set(hostkey,receivejson.hostname);
-
-			if (!dicChannel.has(channelkey)) 
-				dicChannel.set(channelkey,receivejson.channel);
-
 			if (!dicClient.has(clientkey)){
 			    dicClient.set(clientkey,1);
 			    sum=sum+1;
+			    mac_address.innerHTML="unique macaddr_client: "+clientkey+"\r\n"+mac_address.innerHTML;
 			}
 
-			for(var key in dicHost.getItems())
-			{
-				var value=dicHost.get(key);
+			if (!dicHost.has(hostkey))
+				dicHost.set(hostkey,receivejson.hostname);
+			else
+				noSameHost=false;
+
+			if (!dicChannel.has(channelkey)) 
+				dicChannel.set(channelkey,receivejson.channel);
+			else
+				noSameChannel=false;
+			
+			if (noSameHost) {
+				var value=dicHost.get(hostkey);
 				if (dicHostReuslt.has(value))
 					dicHostReuslt.set(value,dicHostReuslt.get(value)+1);
 				else
 					dicHostReuslt.set(value,1);
 			}
-
-			for(var key in dicChannel.getItems())
-			{
-				var value=dicChannel.get(key);
+			
+			if (noSameChannel) {
+				var value=dicChannel.get(channelkey);
 				if (dicChannelReuslt.has(value))
 					dicChannelReuslt.set(value,dicChannelReuslt.get(value)+1);
 				else
 					dicChannelReuslt.set(value,1);
 			}
 
-			for(var key in dicHostReuslt.getItems())
-			{
-				var dataPointIndex=0;
-				dps[dataPointIndex].y =dicHostReuslt.get(key);
-			}
+			var dataPointIndex=0;
+			dpsHost[dataPointIndex].y =dicHostReuslt.get(receivejson.hostname);
+			
 
-			for(var key in dicChannelReuslt.getItems())
-			{
-				var dataPointIndex=key;
-				var deltaY=dicChannelReuslt.get(key);
-				dps[dataPointIndex].y =deltaY;
+			var dataPointIndex=Number(receivejson.channel);
+			if (Number.isInteger(dataPointIndex)) {
+				dpsChannel[dataPointIndex].y =dicChannelReuslt.get(receivejson.channel);
 			}
 			
-			// updating legend text. 
-			//sum = sum + deltaY;
+			
 			totalEmployees = "total unique mac_address: " + sum;			
-			chart.options.data[0].legendText = totalEmployees;	
+			chartHost.options.data[0].legendText = chartChannel.options.data[0].legendText = totalEmployees;	
 
-			chart.render();
+			chartHost.render();
+			chartChannel.render();
 		}
 
 		function Dictionary() {
@@ -190,8 +219,15 @@
 	<script type="text/javascript" src="canvasjs.min.js"></script>
 </head>
 <body>
-	<div id="chartContainer" style="height:300px; width:100%;"></div>
-	<div id="receiveContent" style="height:300px; width:100%;"><div>
+	<div style="height:400px;width:100%">
+		<div id="chartHost" style="height:300px;width:60%;float:left;"></div>
+		<textarea id="mac_address" style="height:300px;width:30%;float:right"></textarea>
+	</div>
+	<div id="chartChannel" style="height:300px; width:100%;"></div>
+	<br/>
+	<h4>receive msg</h4>
+	<hr>
+	<div id="receiveContent" style="height:300px; width:100%"><div>
 </body>
 
 </html>
